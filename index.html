@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Squad — Mission Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-agent: #1a1a2e;
+            --accent-green: #00d4aa;
+            --accent-blue: #00d4ff;
+            --accent-purple: #a855f7;
+            --accent-orange: #f97316;
+            --accent-red: #ef4444;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --border: #2d2d3d;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-dark) 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .logo-text h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .logo-text span {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .market-status {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0, 212, 170, 0.1);
+            border: 1px solid var(--accent-green);
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Main Grid */
+        .container {
+            display: grid;
+            grid-template-columns: 250px 1fr 350px;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        /* Agent Sidebar */
+        .agent-panel {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        .agent-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .agent-card {
+            background: var(--bg-agent);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .agent-card:hover {
+            border-color: var(--accent-blue);
+            transform: translateX(4px);
+        }
+
+        .agent-card.active {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 20px rgba(0, 212, 170, 0.2);
+        }
+
+        .agent-card.sleeping {
+            opacity: 0.6;
+            border-color: var(--border);
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .agent-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .alpha .agent-avatar { background: linear-gradient(135deg, #ff6b6b, #ee5a5a); }
+        .beta .agent-avatar { background: linear-gradient(135deg, #4ecdc4, #44a08d); }
+        .gamma .agent-avatar { background: linear-gradient(135deg, #a855f7, #9333ea); }
+        .theta .agent-avatar { background: linear-gradient(135deg, #f97316, #ea580c); }
+        .delta .agent-avatar { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .sigma .agent-avatar { background: linear-gradient(135deg, #10b981, #059669); }
+
+        .agent-info h3 {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .agent-info span {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .agent-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-active {
+            background: rgba(0, 212, 170, 0.2);
+            color: var(--accent-green);
+        }
+
+        .badge-sleeping {
+            background: rgba(156, 163, 175, 0.2);
+            color: var(--text-secondary);
+        }
+
+        /* Main Activity Feed */
+        .activity-feed {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 20px;
+            min-height: 600px;
+        }
+
+        .feed-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .feed-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .feed-filters {
+            display: flex;
+            gap: 8px;
+        }
+
+        .filter-btn {
+            padding: 6px 12px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+
+        .feed-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            background: var(--bg-agent);
+            border-radius: 12px;
+            padding: 16px;
+            border-left: 3px solid var(--accent-blue);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .activity-item.alert {
+            border-left-color: var(--accent-red);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .activity-item.success {
+            border-left-color: var(--accent-green);
+        }
+
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .activity-agent {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .activity-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .activity-content {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+
+        .activity-tags {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .tag {
+            padding: 3px 8px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--accent-blue);
+        }
+
+        /* Communication Panel */
+        .comm-panel {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+        }
+
+        .comm-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+        }
+
+        .comm-tab {
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .comm-tab.active {
+            background: var(--bg-agent);
+            color: var(--text-primary);
+        }
+
+        .agent-comm {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .comm-message {
+            background: var(--bg-agent);
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 13px;
+        }
+
+        .comm-from {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .comm-to {
+            color: var(--text-secondary);
+            font-size: 11px;
+            margin-left: 20px;
+        }
+
+        .comm-text {
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Output Panel */
+        .output-panel {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .output-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-green);
+        }
+
+        .output-content {
+            background: var(--bg-dark);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Fira Code', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .output-line {
+            margin-bottom: 8px;
+        }
+
+        .timestamp {
+            color: var(--text-secondary);
+            margin-right: 8px;
+        }
+
+        .agent-name {
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        .action {
+            color: var(--accent-green);
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .container {
+                grid-template-columns: 220px 1fr 300px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .agent-panel {
+                display: flex;
+                overflow-x: auto;
+                gap: 12px;
+            }
+            
+            .agent-card {
+                min-width: 200px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+            
+            .market-status {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+
+        /* Animations */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 8px 12px;
+            background: var(--bg-agent);
+            border-radius: 12px;
+            width: fit-content;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-blue);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-4px); }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">⚡</div>
+            <div class="logo-text">
+                <h1>Trading Squad</h1>
+                <span>Mission Control</span>
+            </div>
+        </div>
+        <div class="market-status">
+            <div class="status-indicator">
+                <span class="status-dot"></span>
+                <span>Market Open</span>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 18px; font-weight: 600;">Nifty 50: 25,320 ▲ 0.8%</div>
+                <div style="font-size: 12px; color: var(--text-secondary);">Bank Nifty: 59,610 ▲ 1.2%</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Agent Sidebar -->
+        <aside class="agent-panel">
+            <div class="panel-title">Active Agents</div>
+            <div class="agent-list">
+                <div class="agent-card alpha active">
+                    <div class="agent-header">
+                        <div class="agent-avatar">α</div>
+                        <div class="agent-info">
+                            <h3>Alpha</h3>
+                            <span>Research Agent</span>
+                        </div>
+                    </div>
+                    <div class="agent-status">
+                        <span class="status-badge badge-active">Scanning News</span>
+                        <span style="color: var(--text-secondary);">Next: 9:15 AM</span>
+                    </div>
+                </div>
+
+                <div class="agent-card beta active">
+                    <div class="agent-header">
+                        <div class="agent-avatar">β</div>
+                        <div class="agent-info">
+                            <h3>Beta</h3>
+                            <span>Technical Analyst</span>
+                        </div>
+                    </div>
+                    <div class="agent-status">
+                        <span class="status-badge badge-active">Analyzing Levels</span>
+                        <span style="color: var(--text-secondary);">Next: 9:30 AM</span>
+                    </div>
+                </div>
+
+                <div class="agent-card gamma active">
+                    <div class="agent-header">
+                        <div class="agent-avatar">γ</div>
+                        <div class="agent-info">
+                            <h3>Gamma</h3>
+                            <span>Risk Manager</span>
+                        </div>
+                    </div>
+                    <div class="agent-status">
+                        <span class="status-badge badge-active">Monitoring</span>
+                        <span style="color: var(--text-secondary);">Next: 9:15 AM</span>
+                    </div>
+                </div>
+
+                <div class="agent-card theta sleeping">
+                    <div class="agent-header">
+                        <div class="agent-avatar">θ</div>
+                        <div class="agent-info">
+                            <h3>Theta</h3>
+                            <span>Macro Watcher</span>
+                        </div>
+                    </div>
+                    <div class="agent-status">
+                        <span class="status-badge badge-sleeping">Sleeping</span>
+                        <span style="color: var(--text-secondary);">Wake: 9:30 AM</span>
+                    </div>
+                </div>
+
+                <div class="agent-card delta sleeping">
+                    <div class="agent-header">
+                        <div class="agent-avatar">δ</div>
+                        <div class="agent-info">
+                            <h3>Delta</h3>
+                            <span>Trade Journal</span>
+                        </div>
+                    </div>
+                    <div class="agent-status">
+                        <span class="status-badge badge-sleeping">Sleeping</span>
+                        <span style="color: var(--text-secondary);">Wake: 4:00 PM</span>
+                    </div>
+                </div>
+
+                <div class="agent-card sigma active">
+                    <div class="agent-header">
+                        <div class="agent-avatar">Σ</div>
+                        <div class="agent-info">
+                            <h3>Sigma</h3>
+                            <span>Trade Hunter</span>
+                        </div>
+                    </div>
+                    <div class="agent-status">
+                        <span class="status-badge badge-active">Hunting</span>
+                        <span style="color: var(--text-secondary);">On-Demand</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Activity Feed -->
+        <main class="activity-feed">
+            <div class="feed-header">
+                <h2 class="feed-title">Live Activity Feed</h2>
+                <div class="feed-filters">
+                    <button class="filter-btn active">All</button>
+                    <button class="filter-btn">Alerts</button>
+                    <button class="filter-btn">Trades</button>
+                    <button class="filter-btn">Comms</button>
+                </div>
+            </div>
+
+            <div class="feed-content">
+                <div class="activity-item alert">
+                    <div class="activity-header">
+                        <span class="activity-agent">🚨 Gamma</span>
+                        <span class="activity-time">2 min ago</span>
+                    </div>
+                    <div class="activity-content">
+                        <strong>ALERT:</strong> HAL approaching entry zone ₹4,280. Position sizing validated: 25 shares max (₹10,000 risk). Ready for execution.
+                    </div>
+                    <div class="activity-tags">
+                        <span class="tag">Entry Signal</span>
+                        <span class="tag">Risk Validated</span>
+                    </div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-header">
+                        <span class="activity-agent">📊 Alpha</span>
+                        <span class="activity-time">5 min ago</span>
+                    </div>
+                    <div class="activity-content">
+                        Found breaking news: Defense allocation expected +12% in Budget. HAL, BEL, Cochin Shipyard in focus. Updating market intel...
+                    </div>
+                    <div class="activity-tags">
+                        <span class="tag">News</span>
+                        <span class="tag">Defense Sector</span>
+                    </div>
+                </div>
+
+                <div class="activity-item success">
+                    <div class="activity-header">
+                        <span class="activity-agent">📈 Beta</span>
+                        <span class="activity-time">8 min ago</span>
+                    </div>
+                    <div class="activity-content">
+                        Technical analysis complete: Nifty holding 25,200 support. Bank Nifty showing bullish divergence on 15-min. Resistance at 60,000.
+                    </div>
+                    <div class="activity-tags">
+                        <span class="tag">Technical</span>
+                        <span class="tag">Levels</span>
+                    </div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-header">
+                        <span class="activity-agent">🎯 Sigma</span>
+                        <span class="activity-time">12 min ago</span>
+                    </div>
+                    <div class="activity-content">
+                        Trade identified: SBIN showing accumulation pattern. Entry ₹765-775, Target ₹820, Stop ₹745. R:R 1:1.5. Confluence: Rural credit focus expected.
+                    </div>
+                    <div class="activity-tags">
+                        <span class="tag">Trade Idea</span>
+                        <span class="tag">SBIN</span>
+                    </div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-header">
+                        <span class="activity-agent">🌍 Theta</span>
+                        <span class="activity-time">15 min ago</span>
+                    </div>
+                    <div class="activity-content">
+                        Macro scan: US markets closed mixed. SGX Nifty +0.4%. USD/INR stable at 83.80. Risk-on score: 6/10. FII flows awaited.
+                    </div>
+                    <div class="activity-tags">
+                        <span class="tag">Macro</span>
+                        <span class="tag">Global</span>
+                    </div>
+                </div>
+
+                <div class="activity-item" style="background: transparent; border: none;">
+                    <div class="typing-indicator">
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Communication Panel -->
+        <aside>
+            <div class="comm-panel">
+                <div class="panel-title">Agent Communications</div>
+                <div class="comm-tabs">
+                    <button class="comm-tab active">Chat</button>
+                    <button class="comm-tab">Alerts</button>
+                    <button class="comm-tab">System</button>
+                </div>
+                <div class="agent-comm">
+                    <div class="comm-message">
+                        <div class="comm-from">
+                            <span style="color: #ff6b6b;">Alpha</span>
+                            <span style="color: var(--text-secondary);">→</span>
+                            <span style="color: #4ecdc4;">Beta</span>
+                        </div>
+                        <div class="comm-text">"HAL in news. Check technical levels for validity."</div>
+                    </div>
+
+                    <div class="comm-message">
+                        <div class="comm-from">
+                            <span style="color: #4ecdc4;">Beta</span>
+                            <span style="color: var(--text-secondary);">→</span>
+                            <span style="color: #ff6b6b;">Alpha</span>
+                        </div>
+                        <div class="comm-text">"Confirmed. Breakout valid. Volume +150%."</div>
+                    </div>
+
+                    <div class="comm-message">
+                        <div class="comm-from">
+                            <span style="color: #a855f7;">Gamma</span>
+                            <span style="color: var(--text-secondary);">→</span>
+                            <span style="color: #10b981;">Sigma</span>
+                        </div>
+                        <div class="comm-text">"Position approved. Risk: ₹10,000 (1%)."</div>
+                    </div>
+
+                    <div class="comm-message">
+                        <div class="comm-from">
+                            <span style="color: #10b981;">Sigma</span>
+                            <span style="color: var(--text-secondary);">→</span>
+                            <span style="color: white;">Human</span>
+                        </div>
+                        <div class="comm-text">"HAL entry zone active. Awaiting your execution."</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="output-panel">
+                <div class="output-header">
+                    <span class="output-title">📝 Squad Output</span>
+                    <span style="font-size: 12px; color: var(--text-secondary);">Live</span>
+                </div>
+                <div class="output-content">
+                    <div class="output-line">
+                        <span class="timestamp">09:04:15</span>
+                        <span class="agent-name">[Alpha]</span>
+                        <span class="action">Scanning</span> → Economic Times, Moneycontrol
+                    </div>
+                    <div class="output-line">
+                        <span class="timestamp">09:04:12</span>
+                        <span class="agent-name">[Beta]</span>
+                        <span class="action">Analyzed</span> → Nifty support @ 25,200
+                    </div>
+                    <div class="output-line">
+                        <span class="timestamp">09:04:08</span>
+                        <span class="agent-name">[Gamma]</span>
+                        <span class="action">Validated</span> → Portfolio risk within limits
+                    </div>
+                    <div class="output-line">
+                        <span class="timestamp">09:03:55</span>
+                        <span class="agent-name">[Theta]</span>
+                        <span class="action">Scanned</span> → SGX Nifty +0.4%
+                    </div>
+                    <div class="output-line">
+                        <span class="timestamp">09:03:42</span>
+                        <span class="agent-name">[Sigma]</span>
+                        <span class="action">Identified</span> → 3 trade opportunities
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // Simulate real-time updates
+        function addActivity(agent, content, type = 'normal') {
+            const feed = document.querySelector('.feed-content');
+            const item = document.createElement('div');
+            item.className = `activity-item ${type}`;
+            
+            const now = new Date();
+            const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            item.innerHTML = `
+                <div class="activity-header">
+                    <span class="activity-agent">${agent}</span>
+                    <span class="activity-time">Just now</span>
+                </div>
+                <div class="activity-content">${content}</div>
+            `;
+            
+            // Insert before typing indicator
+            const indicator = feed.querySelector('.typing-indicator').parentElement;
+            feed.insertBefore(item, indicator);
+            
+            // Scroll to top
+            feed.scrollTop = 0;
+        }
+
+        // Simulate agent status changes
+        function updateAgentStatus(agent, status, nextTime) {
+            const card = document.querySelector(`.agent-card.${agent}`);
+            if (card) {
+                const badge = card.querySelector('.status-badge');
+                const timeText = card.querySelector('.agent-status span:last-child');
+                
+                if (status === 'sleeping') {
+                    card.classList.add('sleeping');
+                    card.classList.remove('active');
+                    badge.className = 'status-badge badge-sleeping';
+                    badge.textContent = 'Sleeping';
+                } else {
+                    card.classList.remove('sleeping');
+                    card.classList.add('active');
+                    badge.className = 'status-badge badge-active';
+                    badge.textContent = status;
+                }
+                
+                if (nextTime) {
+                    timeText.textContent = `Next: ${nextTime}`;
+                }
+            }
+        }
+
+        // Demo: Add random activities
+        setInterval(() => {
+            const activities = [
+                { agent: '📊 Alpha', content: 'New analyst upgrade: SBIN target raised to ₹850. Updating watchlist...' },
+                { agent: '📈 Beta', content: 'Volume spike detected in HAL. 2.5x average. Breakout confirmation pending.' },
+                { agent: '⚠️ Gamma', content: 'Risk check complete. Max daily loss: -0.8% of capital. Well within limits.' },
+                { agent: '🌍 Theta', content: 'FII provisional data: Net sellers ₹450 Cr. Caution warranted.' },
+            ];
+            
+            const random = activities[Math.floor(Math.random() * activities.length)];
+            addActivity(random.agent, random.content);
+        }, 15000); // Every 15 seconds
+    </script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+version: '3.8'
+
+services:
+  # Frontend development server
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_WS_URL=ws://localhost:3001
+      - VITE_API_URL=http://localhost:3000
+    command: npm run dev -- --host
+    networks:
+      - trading-squad
+
+  # WebSocket Lambda (simulated locally)
+  websocket:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - CONNECTIONS_TABLE=connections
+      - ACTIVITIES_TABLE=activities
+      - AGENT_STATE_TABLE=agentState
+      - AWS_REGION=ap-south-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: node dist/websocket.js
+    networks:
+      - trading-squad
+    depends_on:
+      - dynamodb
+
+  # HTTP API Lambda (simulated locally)
+  http-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - TRADES_TABLE=trades
+      - ACTIVITIES_TABLE=activities
+      - AGENT_STATE_TABLE=agentState
+      - AWS_REGION=ap-south-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: node dist/http.js
+    networks:
+      - trading-squad
+    depends_on:
+      - dynamodb
+
+  # Agent Simulator (runs on schedule)
+  simulator:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=development
+      - AGENT_STATE_TABLE=agentState
+      - ACTIVITIES_TABLE=activities
+      - COMMUNICATIONS_TABLE=comms
+      - WEBSOCKET_API_ENDPOINT=ws://websocket:3001
+      - AWS_REGION=ap-south-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    # Run simulator every 30 seconds for demo
+    command: >
+      sh -c "while true; do
+        echo 'Running agent simulation...';
+        node -e 'import(\"./dist/simulator.js\").then(m => m.handler({body: JSON.stringify({action: \"simulate_heartbeat\"})}))';
+        sleep 30;
+      done"
+    networks:
+      - trading-squad
+    depends_on:
+      - dynamodb
+      - websocket
+
+  # DynamoDB Local (for local development)
+  dynamodb:
+    image: amazon/dynamodb-local:latest
+    ports:
+      - "8000:8000"
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /data"
+    volumes:
+      - dynamodb-data:/data
+    networks:
+      - trading-squad
+
+  # DynamoDB Admin UI (optional)
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin:latest
+    ports:
+      - "8001:8001"
+    environment:
+      - DYNAMO_ENDPOINT=http://dynamodb:8000
+      - AWS_REGION=ap-south-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    depends_on:
+      - dynamodb
+    networks:
+      - trading-squad
+
+  # Redis (for session management, optional)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - trading-squad
+
+networks:
+  trading-squad:
+    driver: bridge
+
+volumes:
+  dynamodb-data:
+  redis-data:

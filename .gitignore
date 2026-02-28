@@ -1,0 +1,69 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# iOS / Xcode
+AalsiTrader/AalsiTrader.xcodeproj/xcuserdata/
+AalsiTrader/AalsiTrader.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcuserstate
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Android
+*.apk
+*.aab
+.gradle/
+local.properties
+
+# Capacitor
+frontend/android/
+frontend/ios/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+tfplan*
+.terraform/
+.terraform.lock.hcl
+
+# Lambda/build zips
+*.zip
+
+# Backup files
+.backup-*/
+
+# Misc
+.cache/
+.claude/
