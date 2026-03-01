@@ -684,8 +684,7 @@ export const handler = async (
           statusCode: 200,
           headers: corsHeaders,
           body: JSON.stringify({
-            message: 'If an account with that email exists, a reset code has been generated.',
-            resetToken: result.resetToken, // Included for self-hosted mode
+            message: 'If an account with that email exists, a reset code has been sent.',
           }),
         };
       } catch (err) {

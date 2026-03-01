@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { sendWelcomeEmail, sendAccountChangeEmail } from '../utils/email.js';
+import { sendWelcomeEmail, sendAccountChangeEmail, sendPasswordResetEmail } from '../utils/email.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuration
@@ -1005,9 +1005,11 @@ export async function requestPasswordReset(email: string): Promise<{ success: bo
     },
   }));
 
-  console.log(`Password reset requested for ${emailLower}, token: ${resetToken}`);
+  // Send reset code via email
+  await sendPasswordResetEmail(emailLower, resetToken);
+  console.log(`Password reset email sent to ${emailLower}`);
 
-  return { success: true, resetToken };
+  return { success: true };
 }
 
 export async function resetPassword(

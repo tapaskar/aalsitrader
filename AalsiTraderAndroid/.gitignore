@@ -9,3 +9,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Keystore passwords are in gradle.properties - do not commit
+gradle.properties

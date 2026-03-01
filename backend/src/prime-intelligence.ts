@@ -628,6 +628,36 @@ export async function getLessonsForSymbol(symbol: string, limit: number = 5, use
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Consultation Cache (avoid redundant Bedrock calls for same stock)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CONSULTATION_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const consultationCache = new Map<string, { result: AgentConsultation; timestamp: number }>();
+
+function getCachedConsultation(agentId: string, symbol: string): AgentConsultation | null {
+  const key = `${agentId}:${symbol}`;
+  const cached = consultationCache.get(key);
+  if (cached && Date.now() - cached.timestamp < CONSULTATION_CACHE_TTL_MS) {
+    console.log(`[Cache] Hit for ${agentId}/${symbol} (age: ${Math.round((Date.now() - cached.timestamp) / 1000)}s)`);
+    return cached.result;
+  }
+  if (cached) consultationCache.delete(key); // expired
+  return null;
+}
+
+function setCachedConsultation(agentId: string, symbol: string, result: AgentConsultation): void {
+  const key = `${agentId}:${symbol}`;
+  consultationCache.set(key, { result, timestamp: Date.now() });
+  // Evict old entries to prevent memory leak
+  if (consultationCache.size > 200) {
+    const now = Date.now();
+    for (const [k, v] of consultationCache) {
+      if (now - v.timestamp > CONSULTATION_CACHE_TTL_MS) consultationCache.delete(k);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Agent Consultation Functions
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -635,6 +665,8 @@ export async function getLessonsForSymbol(symbol: string, limit: number = 5, use
  * Consult Professor (Alpha) for news and fundamental context
  */
 export async function consultProfessor(symbol: string, userId?: string, currentPrice?: number, techData?: any): Promise<AgentConsultation> {
+  const cached = getCachedConsultation('alpha', symbol);
+  if (cached) return cached;
   const timestamp = Date.now();
   const question = `What is the current news sentiment and fundamental outlook for ${symbol}? Any recent developments I should know about?`;
 
@@ -772,6 +804,7 @@ Respond as Professor:`;
   };
 
   await storeConsultation(symbol, consultation, userId);
+  setCachedConsultation('alpha', symbol, consultation);
   return consultation;
 }
 
@@ -779,6 +812,8 @@ Respond as Professor:`;
  * Consult Techno-Kid (Beta) for technical analysis
  */
 export async function consultTechnoKid(symbol: string, userId?: string): Promise<AgentConsultation> {
+  const cached = getCachedConsultation('beta', symbol);
+  if (cached) return cached;
   const timestamp = Date.now();
   const question = `What are the key technical levels and signals for ${symbol}? Is the setup favorable for entry/exit?`;
 
@@ -1044,6 +1079,7 @@ Respond as Techno-Kid: identify the BREAKOUT PATTERN (or why there isn't one), s
   };
 
   await storeConsultation(symbol, consultation, userId);
+  setCachedConsultation('beta', symbol, consultation);
   return consultation;
 }
 
@@ -1056,6 +1092,8 @@ export async function consultRiskoFrisco(
   entryPrice: number,
   userId?: string
 ): Promise<AgentConsultation> {
+  const cached = getCachedConsultation(`gamma:${proposedAction}`, symbol);
+  if (cached) return cached;
   const timestamp = Date.now();
 
   // Guard: refuse to assess risk if price is unknown
@@ -1167,6 +1205,7 @@ Do NOT reject based on market opinion or stock fundamentals — that is Prime's 
   };
 
   await storeConsultation(symbol, consultation, userId);
+  setCachedConsultation(`gamma:${proposedAction}`, symbol, consultation);
   return consultation;
 }
 
@@ -1547,22 +1586,27 @@ export async function generateHumanSummary(userId?: string): Promise<string> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Prime's decision model: Nova Pro (APAC, cost-optimized).
- * Nova Pro is ~13x more capable than Nova Lite at $0.80/$3.20 per MTok.
- * Falls back to Haiku → Nova Lite if Nova Pro is unavailable.
- * Cost: ~$0.003/decision → ~$5.50/user/month
+ * Prime's decision model: DeepSeek V3 (strong reasoning, cost-effective).
+ * Falls back to Nova Lite → Haiku if DeepSeek is unavailable.
+ * DeepSeek: $0.14/$0.28 per MTok — better reasoning than Nova Lite for final decisions.
  */
 async function callClaudeOpus(prompt: string, maxTokens: number = 1500): Promise<string> {
-  const models: Array<{ id: string; format: 'nova' | 'claude' }> = [
-    { id: 'apac.amazon.nova-pro-v1:0', format: 'nova' },
-    { id: 'apac.anthropic.claude-3-haiku-20240307-v1:0', format: 'claude' },
+  const models: Array<{ id: string; format: 'deepseek' | 'nova' | 'claude' }> = [
+    { id: 'deepseek.v3.2', format: 'deepseek' },
     { id: 'apac.amazon.nova-lite-v1:0', format: 'nova' },
+    { id: 'apac.anthropic.claude-3-haiku-20240307-v1:0', format: 'claude' },
   ];
 
   for (const model of models) {
     try {
       let requestBody: string;
-      if (model.format === 'nova') {
+      if (model.format === 'deepseek') {
+        requestBody = JSON.stringify({
+          prompt,
+          max_tokens: maxTokens,
+          temperature: 0.7,
+        });
+      } else if (model.format === 'nova') {
         requestBody = JSON.stringify({
           messages: [{ role: 'user', content: [{ text: prompt }] }],
           inferenceConfig: { maxTokens, temperature: 0.7 },
@@ -1576,9 +1620,10 @@ async function callClaudeOpus(prompt: string, maxTokens: number = 1500): Promise
         });
       }
 
-      // 8s timeout per model — fail fast and try next
+      // 12s timeout for DeepSeek (larger model), 8s for others
+      const timeoutMs = model.format === 'deepseek' ? 12000 : 8000;
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
       const response = await bedrockClient.send(new InvokeModelCommand({
         modelId: model.id,
@@ -1591,7 +1636,9 @@ async function callClaudeOpus(prompt: string, maxTokens: number = 1500): Promise
       const result = JSON.parse(new TextDecoder().decode(response.body));
       console.log(`[Prime] Decision made with ${model.id}`);
 
-      if (model.format === 'nova') {
+      if (model.format === 'deepseek') {
+        return result.choices?.[0]?.text || '';
+      } else if (model.format === 'nova') {
         return result.output?.message?.content?.[0]?.text || '';
       } else {
         return result.content?.[0]?.text || '';
@@ -1606,9 +1653,9 @@ async function callClaudeOpus(prompt: string, maxTokens: number = 1500): Promise
 }
 
 async function callClaude(prompt: string, maxTokens: number = 1500): Promise<string> {
-  // Nova Pro primary (same model as callClaudeOpus — Lite gets throttled under concurrent load)
+  // Nova Micro primary — cheapest model ($0.035/$0.14 per MTok) for agent consultations
   const models: Array<{ id: string; format: 'nova' | 'claude' }> = [
-    { id: 'apac.amazon.nova-pro-v1:0', format: 'nova' },
+    { id: 'amazon.nova-micro-v1:0', format: 'nova' },
     { id: 'apac.amazon.nova-lite-v1:0', format: 'nova' },
     { id: 'apac.anthropic.claude-3-haiku-20240307-v1:0', format: 'claude' },
   ];

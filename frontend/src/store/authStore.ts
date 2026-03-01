@@ -79,7 +79,7 @@ interface AuthState {
     settings?: Partial<User['settings']>;
     emailOptOut?: boolean;
   }) => Promise<boolean>;
-  requestPasswordReset: (email: string) => Promise<{ success: boolean; resetToken?: string }>;
+  requestPasswordReset: (email: string) => Promise<{ success: boolean }>;
   resetPassword: (email: string, resetToken: string, newPassword: string) => Promise<boolean>;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
@@ -263,7 +263,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       // Request Password Reset
-      requestPasswordReset: async (email: string): Promise<{ success: boolean; resetToken?: string }> => {
+      requestPasswordReset: async (email: string): Promise<{ success: boolean }> => {
         set({ isLoading: true, error: null });
 
         try {
@@ -281,7 +281,7 @@ export const useAuthStore = create<AuthState>()(
           }
 
           set({ isLoading: false, error: null });
-          return { success: true, resetToken: data.resetToken };
+          return { success: true };
         } catch (err) {
           set({ isLoading: false, error: 'Unable to connect to server. Check your internet connection.' });
           return { success: false };

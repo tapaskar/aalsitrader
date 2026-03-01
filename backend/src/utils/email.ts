@@ -182,6 +182,28 @@ export async function sendWeeklyInsightEmail(email: string, username: string, in
   await sendEmail(email, 'AalsiTrader — Weekly Market Insight', wrapHtml(body, email));
 }
 
+export async function sendPasswordResetEmail(email: string, resetCode: string): Promise<void> {
+  const body = `
+    <h2 style="margin:0 0 16px;color:#18181b;font-size:24px">Password Reset</h2>
+    <p style="color:#374151;line-height:1.6;margin:0 0 16px">
+      We received a request to reset the password for your AalsiTrader account.
+      Use the code below to complete the reset:
+    </p>
+    <div style="background:#f0fdf4;border:2px solid #10b981;border-radius:8px;padding:24px;margin:0 0 24px;text-align:center">
+      <p style="color:#6b7280;font-size:13px;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px">Your Reset Code</p>
+      <p style="color:#18181b;font-size:36px;font-weight:700;margin:0;letter-spacing:6px;font-family:monospace">${resetCode}</p>
+    </div>
+    <p style="color:#6b7280;font-size:14px;margin:0 0 8px">
+      This code expires in <strong>1 hour</strong>.
+    </p>
+    <p style="color:#6b7280;font-size:14px;margin:0">
+      If you didn't request a password reset, you can safely ignore this email.
+    </p>
+  `;
+
+  await sendEmail(email, 'AalsiTrader — Password Reset Code', wrapHtml(body, email));
+}
+
 export function verifyUnsubscribeToken(token: string): string | null {
   try {
     const payload = jwt.verify(token, JWT_SECRET) as { email: string; action: string };

@@ -485,44 +485,57 @@ export function LandingPage({ onSignIn, onStartTrial }: LandingPageProps) {
 
       <main>
       {/* Hero */}
-      <section id="hero" className="py-20 md:py-32 px-4 relative">
+      <section id="hero" className="py-20 md:py-28 px-4 relative overflow-hidden">
         {/* Radial glow behind hero */}
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 40%, rgba(0,212,255,0.12) 0%, transparent 70%)' }} />
         {/* Left orb */}
         <div className="absolute -left-20 top-10 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(0,212,170,0.15) 0%, transparent 70%)' }} />
-        {/* Right orb */}
-        <div className="absolute -right-20 top-16 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%)' }} />
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-accent/10 border border-accent/30 rounded-full text-accent text-sm mb-6">
-            <Bot className="w-4 h-4" />
-            AI-Powered Trading for the Lazy Trader
+        {/* Right orb — shifted to match GIF */}
+        <div className="absolute -right-20 top-16 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.18) 0%, transparent 70%)' }} />
+        <div className="max-w-6xl mx-auto relative z-10 flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+          {/* Left — text content */}
+          <div className="flex-1 text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-accent/10 border border-accent/30 rounded-full text-accent text-sm mb-6">
+              <Bot className="w-4 h-4" />
+              AI-Powered Trading for the Lazy Trader
+            </div>
+            <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
+              Be Lazy.{' '}
+              <span className="bg-gradient-to-r from-accent to-active bg-clip-text text-transparent">
+                Let AI Trade for You.
+              </span>
+            </h1>
+            <p className="text-lg md:text-xl text-gray-400 max-w-2xl mb-10">
+              6 specialized AI agents work round the clock — scanning markets, analyzing opportunities,
+              and executing trades while you sit back. From paper trading to live F&amp;O execution.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4">
+              <button
+                onClick={onStartTrial}
+                className="flex items-center gap-2 px-8 py-3 bg-accent text-white font-semibold rounded-lg hover:bg-accent/80 transition-colors text-lg"
+              >
+                Start 7-Day Free Trial
+                <ArrowRight className="w-5 h-5" />
+              </button>
+              <button
+                onClick={onSignIn}
+                className="px-8 py-3 border border-border text-gray-300 font-medium rounded-lg hover:bg-card-hover transition-colors text-lg"
+              >
+                Sign In
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-4">No credit card required. Full access for 7 days.</p>
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
-            Be Lazy.{' '}
-            <span className="bg-gradient-to-r from-accent to-active bg-clip-text text-transparent">
-              Let AI Trade for You.
-            </span>
-          </h1>
-          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10">
-            6 specialized AI agents work round the clock — scanning markets, analyzing opportunities,
-            and executing trades while you sit back. From paper trading to live F&O execution.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button
-              onClick={onStartTrial}
-              className="flex items-center gap-2 px-8 py-3 bg-accent text-white font-semibold rounded-lg hover:bg-accent/80 transition-colors text-lg"
-            >
-              Start 7-Day Free Trial
-              <ArrowRight className="w-5 h-5" />
-            </button>
-            <button
-              onClick={onSignIn}
-              className="px-8 py-3 border border-border text-gray-300 font-medium rounded-lg hover:bg-card-hover transition-colors text-lg"
-            >
-              Sign In
-            </button>
+          {/* Right — relaxed trader GIF (Lottie Simple License, free commercial use) */}
+          <div className="flex-shrink-0 relative">
+            <div className="absolute -inset-4 rounded-3xl pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(0,212,255,0.15) 0%, transparent 70%)' }} />
+            <img
+              src="/relaxed-trader.gif"
+              alt="Relaxed trader chilling while AI handles the markets"
+              className="w-72 md:w-96 rounded-2xl"
+              style={{ mixBlendMode: 'screen' }}
+            />
           </div>
-          <p className="text-xs text-gray-500 mt-4">No credit card required. Full access for 7 days.</p>
         </div>
       </section>
 

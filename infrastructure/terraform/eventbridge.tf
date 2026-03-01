@@ -115,8 +115,8 @@ resource "aws_lambda_permission" "eventbridge_post_market" {
 
 resource "aws_cloudwatch_event_rule" "autonomous_trader_15min" {
   name                = "autonomous-trader-15min-${var.environment}"
-  description         = "Trigger autonomous paper trader every 15 min during market hours"
-  schedule_expression = "cron(*/15 3-10 ? * MON-FRI *)"
+  description         = "Trigger autonomous paper trader every 10 min during market hours"
+  schedule_expression = "cron(*/10 3-10 ? * MON-FRI *)"
 }
 
 resource "aws_cloudwatch_event_target" "autonomous_trader" {

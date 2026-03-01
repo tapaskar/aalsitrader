@@ -83,9 +83,6 @@ export function AuthModal({ initialMode = 'login', onClose }: AuthModalProps = {
 
     const result = await requestPasswordReset(email);
     if (result.success) {
-      if (result.resetToken) {
-        setResetToken(result.resetToken);
-      }
       setMode('reset-code');
     }
   };
@@ -156,7 +153,7 @@ export function AuthModal({ initialMode = 'login', onClose }: AuthModalProps = {
             </button>
             <h2 className="text-xl font-bold">Reset Password</h2>
             <p className="text-sm text-gray-400 mt-1">
-              Enter your email address and we'll generate a reset code
+              Enter your email address and we'll send you a reset code
             </p>
           </div>
 
@@ -221,7 +218,7 @@ export function AuthModal({ initialMode = 'login', onClose }: AuthModalProps = {
             </button>
             <h2 className="text-xl font-bold">Enter Reset Code</h2>
             <p className="text-sm text-gray-400 mt-1">
-              Enter the reset code and your new password
+              We sent a 6-digit code to <strong className="text-gray-300">{email}</strong>. Check your inbox.
             </p>
           </div>
 
@@ -230,19 +227,6 @@ export function AuthModal({ initialMode = 'login', onClose }: AuthModalProps = {
               <div className="flex items-center gap-2 p-3 bg-danger/10 border border-danger/30 rounded-lg text-danger text-sm">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{displayError}</span>
-              </div>
-            )}
-
-            {/* Show the generated reset code */}
-            {resetToken && (
-              <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg">
-                <p className="text-xs text-gray-400 mb-1">Your reset code:</p>
-                <p className="text-2xl font-mono font-bold text-accent tracking-[0.3em] text-center">
-                  {resetToken}
-                </p>
-                <p className="text-[10px] text-gray-500 mt-1.5 text-center">
-                  This code expires in 1 hour
-                </p>
               </div>
             )}
 
