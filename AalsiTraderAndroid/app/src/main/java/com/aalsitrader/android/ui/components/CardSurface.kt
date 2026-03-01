@@ -1,0 +1,26 @@
+package com.aalsitrader.android.ui.components
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.aalsitrader.android.ui.theme.AppBorder
+import com.aalsitrader.android.ui.theme.CardBackground
+
+@Composable
+fun CardSurface(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        color = CardBackground,
+        border = BorderStroke(1.dp, AppBorder.copy(alpha = 0.3f)),
+    ) {
+        content()
+    }
+}
