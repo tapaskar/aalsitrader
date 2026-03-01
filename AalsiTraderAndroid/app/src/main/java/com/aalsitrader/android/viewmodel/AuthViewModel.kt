@@ -29,6 +29,12 @@ class AuthViewModel : ViewModel() {
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
+    private val _resetEmail = MutableStateFlow<String?>(null)
+    val resetEmail: StateFlow<String?> = _resetEmail.asStateFlow()
+
+    private val _resetSuccess = MutableStateFlow(false)
+    val resetSuccess: StateFlow<Boolean> = _resetSuccess.asStateFlow()
+
     fun checkAuth() {
         if (TokenManager.hasToken()) {
             _isLoggedIn.value = true
@@ -76,6 +82,7 @@ class AuthViewModel : ViewModel() {
             _error.value = null
             try {
                 val response = repository.forgotPassword(email.trim())
+                _resetEmail.value = email.trim()
                 _message.value = response.message ?: "Password reset email sent"
             } catch (e: Exception) {
                 _error.value = e.message ?: "Failed to send reset email"
@@ -83,6 +90,29 @@ class AuthViewModel : ViewModel() {
                 _isLoading.value = false
             }
         }
+    }
+
+    fun resetPassword(email: String, resetToken: String, newPassword: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+            _resetSuccess.value = false
+            try {
+                val response = repository.resetPassword(email.trim(), resetToken.trim(), newPassword)
+                _message.value = response.message ?: "Password reset successful"
+                _resetSuccess.value = true
+                _resetEmail.value = null
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Password reset failed"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun clearResetState() {
+        _resetEmail.value = null
+        _resetSuccess.value = false
     }
 
     fun loadProfile() {

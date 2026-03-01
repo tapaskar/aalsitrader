@@ -14,6 +14,9 @@ data class RegisterRequest(val email: String, val username: String, val password
 data class ForgotPasswordRequest(val email: String)
 
 @Serializable
+data class ResetPasswordRequest(val email: String, val resetToken: String, val newPassword: String)
+
+@Serializable
 data class AuthResponse(val token: String? = null, val user: User? = null, val message: String? = null)
 
 @Serializable
@@ -41,4 +44,7 @@ interface AuthApi {
 
     @POST("auth/forgot-password")
     suspend fun forgotPassword(@Body request: ForgotPasswordRequest): MessageResponse
+
+    @POST("auth/reset-password")
+    suspend fun resetPassword(@Body request: ResetPasswordRequest): MessageResponse
 }

@@ -26,10 +26,22 @@
 }
 
 # Retrofit
--keepattributes Signature, Exceptions
--keepclassmembers,allowshrinking,allowobfuscation interface * {
-    @retrofit2.http.* <methods>;
-}
+-keepattributes Signature, Exceptions, InnerClasses, EnclosingMethod
+-keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations, AnnotationDefault
+
+# Keep Retrofit API interfaces fully — R8 strips generic signatures from suspend
+# function Continuation<T> params, causing ParameterizedType cast failures
+-keep interface com.aalsitrader.android.network.** { *; }
+
+# Keep all @Serializable data classes used as Retrofit request/response types
+-keep @kotlinx.serialization.Serializable class com.aalsitrader.android.network.** { *; }
+-keep @kotlinx.serialization.Serializable class com.aalsitrader.android.model.** { *; }
+
+# Keep Continuation generic signature for suspend function return type resolution
+-keep class kotlin.coroutines.Continuation { *; }
+
+-keep,allowobfuscation,allowshrinking class retrofit2.Response
+
 -dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement
 -dontwarn javax.annotation.**
 -dontwarn kotlin.Unit

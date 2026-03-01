@@ -6,7 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.aalsitrader.android.viewmodel.AuthViewModel
 
-enum class AuthPage { Login, Register, ForgotPassword }
+enum class AuthPage { Login, Register, ForgotPassword, ResetCode }
 
 @Composable
 fun AuthContainerScreen(
@@ -41,6 +41,15 @@ fun AuthContainerScreen(
             AuthPage.ForgotPassword -> ForgotPasswordScreen(
                 authViewModel = authViewModel,
                 onNavigateToLogin = { currentPage = AuthPage.Login },
+                onNavigateToResetCode = { currentPage = AuthPage.ResetCode },
+            )
+            AuthPage.ResetCode -> ResetCodeScreen(
+                authViewModel = authViewModel,
+                onNavigateToLogin = {
+                    authViewModel.clearMessage()
+                    currentPage = AuthPage.Login
+                },
+                onNavigateBack = { currentPage = AuthPage.ForgotPassword },
             )
         }
     }

@@ -24,12 +24,21 @@ import com.aalsitrader.android.viewmodel.AuthViewModel
 fun ForgotPasswordScreen(
     authViewModel: AuthViewModel,
     onNavigateToLogin: () -> Unit,
+    onNavigateToResetCode: () -> Unit = {},
 ) {
     var email by remember { mutableStateOf("") }
     val isLoading by authViewModel.isLoading.collectAsState()
     val error by authViewModel.error.collectAsState()
     val message by authViewModel.message.collectAsState()
+    val resetEmail by authViewModel.resetEmail.collectAsState()
     val focusManager = LocalFocusManager.current
+
+    // Navigate to reset code screen when email is sent successfully
+    LaunchedEffect(resetEmail) {
+        if (resetEmail != null) {
+            onNavigateToResetCode()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -46,7 +55,7 @@ fun ForgotPasswordScreen(
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Enter your email to receive a reset link",
+            text = "Enter your email to receive a reset code",
             style = MaterialTheme.typography.bodyMedium,
             color = TextSecondary,
         )
@@ -113,13 +122,14 @@ fun ForgotPasswordScreen(
                     strokeWidth = 2.dp,
                 )
             } else {
-                Text("Send Reset Link", fontWeight = FontWeight.SemiBold)
+                Text("Send Reset Code", fontWeight = FontWeight.SemiBold)
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(onClick = {
             authViewModel.clearMessage()
+            authViewModel.clearResetState()
             onNavigateToLogin()
         }) {
             Text("Back to Sign In", color = AccentCyan)

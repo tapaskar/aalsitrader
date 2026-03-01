@@ -25,4 +25,8 @@ class AuthRepository {
     suspend fun forgotPassword(email: String): MessageResponse {
         return api.forgotPassword(ForgotPasswordRequest(email))
     }
+
+    suspend fun resetPassword(email: String, resetToken: String, newPassword: String): MessageResponse {
+        return api.resetPassword(ResetPasswordRequest(email, resetToken, newPassword))
+    }
 }
