@@ -44,7 +44,7 @@ export const handler = async (event: AgentEvent) => {
         FunctionName: 'stock-news-rag-query',
         Payload: Buffer.from(
           JSON.stringify({
-            query: `Latest news headlines, earnings reports, and market events for Indian stock market. Focus on ${focusStock} and related sectors. Only news — no technical analysis.`,
+            query: `Latest news headlines, earnings reports, and market events for Indian stock market. Focus on ${focusStock} and related sectors. Include any major geopolitical events (wars, conflicts, sanctions, trade disputes) that could impact global or Indian markets. Only news — no technical analysis.`,
             symbol: focusStock,
           })
         ),
@@ -85,11 +85,39 @@ export const handler = async (event: AgentEvent) => {
     console.log('News RAG query failed, falling back to RSS:', err);
   }
 
-  // Fallback to Google News RSS if Lambda failed
+  // Fetch geopolitical / macro headlines separately (always, to supplement stock-specific news)
+  let geoHeadlines = '';
+  try {
+    const geoUrl =
+      'https://news.google.com/rss/search?q=India+market+geopolitical+war+sanctions+crude+oil+trade+conflict&hl=en-IN&gl=IN&ceid=IN:en';
+    const geoRes = await fetch(geoUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+    });
+    const geoXml = await geoRes.text();
+    const geoTitles: string[] = [];
+    const geoRegex = /<title><!\[CDATA\[(.*?)\]\]><\/title>/g;
+    let geoMatch;
+    while ((geoMatch = geoRegex.exec(geoXml)) !== null && geoTitles.length < 5) {
+      geoTitles.push(geoMatch[1]);
+    }
+    if (geoTitles.length === 0) {
+      const simpleGeoRegex = /<title>(.*?)<\/title>/g;
+      while ((geoMatch = simpleGeoRegex.exec(geoXml)) !== null && geoTitles.length < 5) {
+        if (!geoMatch[1].includes('Google News')) geoTitles.push(geoMatch[1]);
+      }
+    }
+    if (geoTitles.length > 0) {
+      geoHeadlines = '\n\nGLOBAL / GEOPOLITICAL:\n' + geoTitles.map(t => `• ${t}`).join('\n');
+    }
+  } catch {
+    // Non-critical — geopolitical feed failure doesn't block the agent
+  }
+
+  // Fallback to Google News RSS if RAG Lambda failed
   if (!newsData) {
     try {
       const newsUrl =
-        'https://news.google.com/rss/search?q=NSE+stock+market+India+trading&hl=en-IN&gl=IN&ceid=IN:en';
+        'https://news.google.com/rss/search?q=NSE+BSE+stock+market+India&hl=en-IN&gl=IN&ceid=IN:en';
       const res = await fetch(newsUrl, {
         headers: { 'User-Agent': 'Mozilla/5.0' },
       });
@@ -115,6 +143,11 @@ export const handler = async (event: AgentEvent) => {
     }
   }
 
+  // Append geopolitical headlines to the main news data
+  if (geoHeadlines) {
+    newsData = (newsData || '') + geoHeadlines;
+  }
+
   // Use Claude to analyze news
   const today = new Date().toISOString().split('T')[0];
   const prompt = `You are Professor (Alpha), the NEWS analyst. Summarize today's market news for F&O traders.
@@ -124,7 +157,8 @@ CRITICAL RULES:
 - If the headlines mention specific companies, report those exact companies — not others.
 - NEVER mention RSI, MACD, SMA, Bollinger, support/resistance, or any technical indicators.
 - NEVER fabricate earnings numbers, profit percentages, or financial data not in the headlines.
-- Keep it to 2-3 lines. Be specific — name companies and events from the headlines.
+- Keep it to 3-4 lines. Be specific — name companies and events from the headlines.
+- GEOPOLITICAL PRIORITY: Wars, military conflicts, sanctions, trade wars, and major geopolitical tensions are ALWAYS significant for markets. If any headline mentions war, conflict, military action, or sanctions — use [ALERT] and explain the potential market impact (crude oil, FII flows, rupee, defence stocks, etc.). Never dismiss active wars or conflicts as "no major news."
 - If no real news headlines are provided: "Markets quiet — no major news-driven catalysts detected."
 
 Today's date: ${today}
