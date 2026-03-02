@@ -204,6 +204,56 @@ export async function sendPasswordResetEmail(email: string, resetCode: string): 
   await sendEmail(email, 'AalsiTrader — Password Reset Code', wrapHtml(body, email));
 }
 
+export async function sendTrialExpiringEmail(email: string, username: string, trialEndsAt: string): Promise<void> {
+  const endDate = new Date(trialEndsAt);
+  const now = new Date();
+  const daysLeft = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+  const formattedDate = endDate.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  const urgency = daysLeft <= 1 ? 'tomorrow' : `in ${daysLeft} days`;
+  const urgencyColor = daysLeft <= 1 ? '#ef4444' : '#f59e0b';
+
+  const body = `
+    <h2 style="margin:0 0 16px;color:#18181b;font-size:24px">Your Pro Trial Ends Soon</h2>
+    <p style="color:#374151;line-height:1.6;margin:0 0 16px">
+      Hi ${username}, your <strong>7-day Pro trial</strong> expires <strong style="color:${urgencyColor}">${urgency}</strong> on:
+    </p>
+    <div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;padding:20px;margin:0 0 24px;text-align:center">
+      <p style="color:#92400e;font-size:13px;margin:0 0 4px;text-transform:uppercase;letter-spacing:1px">Trial Expires</p>
+      <p style="color:#18181b;font-size:22px;font-weight:700;margin:0">${formattedDate}</p>
+    </div>
+
+    <p style="color:#374151;line-height:1.6;margin:0 0 8px">
+      After your trial, you'll move to the <strong>Free plan</strong> which includes:
+    </p>
+    <ul style="color:#374151;line-height:1.8;margin:0 0 16px;padding-left:20px">
+      <li>Smart Money Screener</li>
+      <li>Paper Trading with analytics</li>
+    </ul>
+
+    <p style="color:#374151;line-height:1.6;margin:0 0 8px">
+      With <strong>Pro</strong>, you keep full access to:
+    </p>
+    <ul style="color:#374151;line-height:1.8;margin:0 0 24px;padding-left:20px">
+      <li>All 6 AI trading agents (Professor, Techno-Kid, Risko-Frisco, Macro, Booky, Prime)</li>
+      <li>Prime Intelligence Chat — real-time market analysis</li>
+      <li>Nifty Scalper — autonomous options strategies</li>
+      <li>Broker integration & live trading</li>
+    </ul>
+
+    <a href="${APP_URL}" style="display:inline-block;background:#18181b;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:500">Open Dashboard</a>
+    <p style="color:#6b7280;font-size:13px;margin:16px 0 0;line-height:1.5">
+      Make the most of your remaining trial — your AI squad is ready to help you trade smarter.
+    </p>
+  `;
+
+  const subject = daysLeft <= 1
+    ? 'AalsiTrader — Your Pro Trial Expires Tomorrow!'
+    : `AalsiTrader — Your Pro Trial Expires in ${daysLeft} Days`;
+
+  await sendEmail(email, subject, wrapHtml(body, email));
+}
+
 export function verifyUnsubscribeToken(token: string): string | null {
   try {
     const payload = jwt.verify(token, JWT_SECRET) as { email: string; action: string };

@@ -18,7 +18,8 @@
     "build:fargate": "esbuild src/nifty-straddle/fargate-runner.ts --platform=node --target=node20 --bundle --outfile=dist/fargate-runner.js --format=cjs",
     "build:auto-trader": "esbuild src/autonomous-trader.ts --platform=node --target=node20 --bundle --outfile=dist/autonomous-trader.js --format=cjs",
     "build:weekly-digest": "esbuild src/weekly-digest.ts --platform=node --target=node20 --bundle --outfile=dist/weekly-digest.js --format=cjs",
-    "build:all": "npm run build:websocket && npm run build:http && npm run build:simulator && npm run build:agents && npm run build:nifty-ticker && npm run build:fargate && npm run build:auto-trader && npm run build:weekly-digest"
+    "build:trial-reminder": "esbuild src/trial-reminder.ts --platform=node --target=node20 --bundle --outfile=dist/trial-reminder.js --format=cjs",
+    "build:all": "npm run build:websocket && npm run build:http && npm run build:simulator && npm run build:agents && npm run build:nifty-ticker && npm run build:fargate && npm run build:auto-trader && npm run build:weekly-digest && npm run build:trial-reminder"
   },
   "dependencies": {
     "@aws-sdk/client-apigatewaymanagementapi": "^3.450.0",
